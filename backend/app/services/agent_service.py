@@ -12,7 +12,7 @@ class AgentService:
     """Service for AI-powered intent classification and data extraction"""
     
     def __init__(self):
-        self.client = openai.OpenAI(api_key=settings.openai_api_key)
+        self.client = openai.AsyncOpenAI(api_key=settings.openai_api_key)
         self.model = "gpt-4o"
         self.system_prompt = self._build_system_prompt()
     
@@ -51,7 +51,7 @@ Important date resolution examples:
 
 Always be helpful and precise."""
     
-    def classify_input(
+    async def classify_input(
         self,
         text: str,
         context_vars: Optional[dict] = None
@@ -82,8 +82,8 @@ User input: "{text}"
             user_message += f"\nGlobal context:\n{context_str}\n"
         
         try:
-            # Use OpenAI's structured output with response_format parameter
-            completion = self.client.beta.chat.completions.parse(
+            # Use OpenAI's structured output with response_format parameter (async)
+            completion = await self.client.beta.chat.completions.parse(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": self.system_prompt},
@@ -109,7 +109,7 @@ User input: "{text}"
                 clarification_question="I encountered an error processing your request. Could you please rephrase?"
             )
     
-    def classify_with_history(
+    async def classify_with_history(
         self,
         text: str,
         conversation_history: list[dict],
@@ -145,7 +145,7 @@ User input: "{text}"
         messages.append({"role": "user", "content": user_message})
         
         try:
-            completion = self.client.beta.chat.completions.parse(
+            completion = await self.client.beta.chat.completions.parse(
                 model=self.model,
                 messages=messages,
                 response_format=AgentResponse,

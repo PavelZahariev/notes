@@ -36,7 +36,7 @@ async def process_voice_command(file: UploadFile = File(...)):
         transcription = await voice_service.transcribe_audio(file)
         
         # Step 2: Classify intent using Agent Service
-        agent_response = agent_service.classify_input(
+        agent_response = await agent_service.classify_input(
             text=transcription.text,
             context_vars=None
         )

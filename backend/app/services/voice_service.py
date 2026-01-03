@@ -3,7 +3,7 @@ Voice Service
 Handles audio transcription using OpenAI Whisper
 """
 import os
-from openai import OpenAI
+from openai import AsyncOpenAI
 from fastapi import UploadFile
 from app.models.schemas import TranscriptionResponse
 from dotenv import load_dotenv
@@ -14,18 +14,19 @@ class VoiceService:
         self.api_key = os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY environment variable is not set")
-        self.client = OpenAI(api_key=self.api_key)
+        self.client = AsyncOpenAI(api_key=self.api_key)
 
     async def transcribe_audio(self, file: UploadFile) -> TranscriptionResponse:
         """
-        Transcribe audio file using OpenAI Whisper
+        Transcribe audio file using OpenAI Whisper (async)
         """
         try:
             # Pass the file directly to OpenAI
             # file.file is the underlying file-like object
             audio_content = await file.read()
             
-            response = self.client.audio.transcriptions.create(
+            # Use async OpenAI client
+            response = await self.client.audio.transcriptions.create(
                 model="whisper-1",
                 file=(file.filename, audio_content, file.content_type),
                 language="en"

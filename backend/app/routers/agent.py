@@ -35,7 +35,7 @@ async def classify_input(request: AgentClassifyRequest):
         }
     """
     try:
-        result = agent_service.classify_input(
+        result = await agent_service.classify_input(
             text=request.text,
             context_vars=request.context_vars
         )
@@ -64,7 +64,7 @@ async def classify_with_conversation_context(
         AgentResponse with structured classification
     """
     try:
-        result = agent_service.classify_with_history(
+        result = await agent_service.classify_with_history(
             text=text,
             conversation_history=conversation_history,
             context_vars=context_vars
