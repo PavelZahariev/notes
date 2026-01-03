@@ -4,14 +4,15 @@ import './AudioRecorder.css'
 
 /**
  * AudioRecorder Component
- * Captures voice input and sends it to the FastAPI transcribe endpoint
+ * Captures voice input and sends it to the FastAPI process endpoint
+ * which transcribes the audio and classifies the intent using the Agent service
  * 
  * Features:
  * - Click-to-start/stop recording
  * - MIME type compatibility (webm/mp4 fallback)
  * - Permission handling
- * - Visual feedback (recording/transcribing states)
- * - Displays transcription result
+ * - Visual feedback (recording/processing states)
+ * - Displays agent response with intent, content, category, and due date
  */
 function AudioRecorder() {
   // Recording state
@@ -21,7 +22,7 @@ function AudioRecorder() {
   const [permissionGranted, setPermissionGranted] = useState(null)
   
   // Results state
-  const [transcription, setTranscription] = useState('')
+  const [agentResponse, setAgentResponse] = useState(null)
   const [error, setError] = useState(null)
   
   // Refs
@@ -76,10 +77,32 @@ function AudioRecorder() {
   /**
    * Start recording
    */
+  /**
+   * Starts audio recording by requesting microphone permission, initializing MediaRecorder,
+   * and setting up audio stream with echo cancellation and noise suppression.
+   * Uses useCallback to memoize the function and prevent unnecessary re-creation on each render,
+   * since it's only dependent on permissionGranted, requestPermission, and getSupportedMimeType.
+   * This is particularly important when passed as a prop to child components or used in effect dependencies.
+   * 
+   * @async
+   * @function startRecording
+   * @returns {Promise<void>}
+   * @throws {Error} When microphone access is denied or MediaRecorder initialization fails
+   * 
+   * @description
+   * - Resets error state and transcription
+   * - Requests microphone permission if not already granted
+   * - Creates audio stream with enhanced audio settings (echo cancellation, noise suppression, auto gain)
+   * - Initializes MediaRecorder with browser-supported MIME type
+   * - Collects audio chunks during recording
+   * - Sends audio blob to backend when recording stops
+   * - Manages recording timer that updates every second
+   * - Properly cleans up media tracks on stop
+   */
   const startRecording = useCallback(async () => {
     try {
       setError(null)
-      setTranscription('')
+      setAgentResponse(null)
       
       // Request permission if not already granted
       if (permissionGranted === null) {
@@ -162,7 +185,7 @@ function AudioRecorder() {
   }, [isRecording])
 
   /**
-   * Send audio to backend for transcription
+   * Send audio to backend for processing (transcription + intent classification)
    */
   const sendToBackend = async (audioBlob, mimeType) => {
     try {
@@ -183,15 +206,15 @@ function AudioRecorder() {
 
       console.log(`Sending ${audioFile.size} bytes to backend (${mimeType})`)
 
-      // Call API
-      const result = await voiceAPI.transcribe(audioFile)
+      // Call process API (transcribe + classify)
+      const result = await voiceAPI.process(audioFile)
       
-      console.log('Transcription result:', result)
-      setTranscription(result.text || 'No transcription returned')
+      console.log('Agent response:', result)
+      setAgentResponse(result)
 
     } catch (err) {
-      console.error('Transcription failed:', err)
-      setError(`Transcription failed: ${err.response?.data?.detail || err.message}`)
+      console.error('Processing failed:', err)
+      setError(`Processing failed: ${err.response?.data?.detail || err.message}`)
     } finally {
       setIsTranscribing(false)
     }
@@ -229,7 +252,7 @@ function AudioRecorder() {
         streamRef.current.getTracks().forEach(track => track.stop())
       }
     }
-  }, [])
+  }, []) 
 
   return (
     <div className="audio-recorder">
@@ -249,7 +272,7 @@ function AudioRecorder() {
         <p className="status-label">
           {isRecording && `Recording... ${formatTime(recordingTime)}`}
           {!isRecording && !isTranscribing && 'Click to record'}
-          {isTranscribing && 'Transcribing...'}
+          {isTranscribing && 'Processing...'}
         </p>
       </div>
 
@@ -269,11 +292,38 @@ function AudioRecorder() {
         </div>
       )}
 
-      {/* Transcription Result */}
-      {transcription && !isTranscribing && (
+      {/* Agent Response Result */}
+      {agentResponse && !isTranscribing && (
         <div className="transcription-result">
-          <h3>Transcription:</h3>
-          <p className="transcription-text">{transcription}</p>
+          <h3>Response:</h3>
+          <div className="agent-response">
+            <div className="response-field">
+              <span className="field-label">Intent:</span>
+              <span className={`intent-badge intent-${agentResponse.intent?.toLowerCase()}`}>
+                {agentResponse.intent}
+              </span>
+            </div>
+            <div className="response-field">
+              <span className="field-label">Content:</span>
+              <p className="transcription-text">{agentResponse.content}</p>
+            </div>
+            <div className="response-field">
+              <span className="field-label">Category:</span>
+              <span className="category-badge">{agentResponse.category}</span>
+            </div>
+            {agentResponse.due_date && (
+              <div className="response-field">
+                <span className="field-label">Due Date:</span>
+                <span className="due-date">{new Date(agentResponse.due_date).toLocaleString()}</span>
+              </div>
+            )}
+            {!agentResponse.is_complete && agentResponse.clarification_question && (
+              <div className="response-field clarification">
+                <span className="field-label">⚠️ Clarification needed:</span>
+                <p className="clarification-text">{agentResponse.clarification_question}</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

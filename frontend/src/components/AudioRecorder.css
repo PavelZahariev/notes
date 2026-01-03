@@ -194,6 +194,84 @@
   min-height: 3rem;
 }
 
+/* Agent Response Styles */
+.agent-response {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.response-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.response-field .field-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.intent-badge {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  width: fit-content;
+}
+
+.intent-badge.intent-note {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.intent-badge.intent-reminder {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.intent-badge.intent-query {
+  background-color: #e0e7ff;
+  color: #3730a3;
+}
+
+.category-badge {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  background-color: #f3f4f6;
+  color: #374151;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  width: fit-content;
+}
+
+.due-date {
+  color: #059669;
+  font-weight: 500;
+  font-size: 0.9375rem;
+}
+
+.response-field.clarification {
+  padding: 1rem;
+  background-color: #fef3c7;
+  border-radius: 8px;
+  border-left: 4px solid #f59e0b;
+}
+
+.clarification-text {
+  margin: 0.5rem 0 0 0;
+  color: #92400e;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
 /* Permission Button */
 .permission-button {
   padding: 0.75rem 1.5rem;

@@ -3,7 +3,7 @@ Pydantic Schemas
 Data models for API requests and responses
 """
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Literal
 from datetime import datetime
 
 class NoteBase(BaseModel):
@@ -64,4 +64,20 @@ class VoiceResponse(BaseModel):
 class TranscriptionResponse(BaseModel):
     text: str
     language: str
+
+# Agent Intelligence Schemas
+class AgentResponse(BaseModel):
+    """Structured output from the AI agent for intent classification and extraction"""
+    intent: Literal['NOTE', 'REMINDER', 'QUERY']
+    content: str = Field(description="The cleaned-up version of the transcript")
+    category: str = Field(description="Auto-categorized topic (e.g., 'Work', 'Personal', 'Health')")
+    due_date: Optional[str] = Field(default=None, description="ISO format datetime string for reminders")
+    is_complete: bool = Field(description="False if the instruction is missing details")
+    clarification_question: Optional[str] = Field(default=None, description="Question to ask if is_complete is False")
+
+class AgentClassifyRequest(BaseModel):
+    """Request schema for agent classification endpoint"""
+    text: str = Field(description="The transcribed text to classify")
+    context_vars: Optional[dict] = Field(default_factory=dict, description="Global context variables")
+
 
