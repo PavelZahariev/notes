@@ -9,10 +9,16 @@ const apiClient = axios.create({
   },
 })
 
+import { supabase } from './supabase'
+
 // Request interceptor for adding auth tokens
 apiClient.interceptors.request.use(
-  (config) => {
-    // TODO: Add auth token from Supabase session
+  async (config) => {
+    // Get auth token from Supabase session
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      config.headers.Authorization = `Bearer ${session.access_token}`;
+    }
     return config
   },
   (error) => {

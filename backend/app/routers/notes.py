@@ -2,13 +2,18 @@
 Notes API Router
 Handles note creation, retrieval, and management
 """
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from typing import List, Optional
+from ..core.auth import get_current_user
 
 router = APIRouter(prefix="/api/notes", tags=["notes"])
 
 @router.get("/")
-async def get_notes(skip: int = 0, limit: int = 100):
+async def get_notes(
+    skip: int = 0, 
+    limit: int = 100,
+    user: dict = Depends(get_current_user)
+):
     """
     Get all notes
     """
@@ -16,7 +21,10 @@ async def get_notes(skip: int = 0, limit: int = 100):
     return {"notes": [], "skip": skip, "limit": limit}
 
 @router.post("/")
-async def create_note(note: dict):
+async def create_note(
+    note: dict,
+    user: dict = Depends(get_current_user)
+):
     """
     Create a new note
     """
@@ -24,7 +32,10 @@ async def create_note(note: dict):
     return {"message": "Note created", "note": note}
 
 @router.get("/{note_id}")
-async def get_note(note_id: int):
+async def get_note(
+    note_id: int,
+    user: dict = Depends(get_current_user)
+):
     """
     Get a specific note by ID
     """
@@ -32,7 +43,11 @@ async def get_note(note_id: int):
     return {"note_id": note_id, "note": {}}
 
 @router.put("/{note_id}")
-async def update_note(note_id: int, note: dict):
+async def update_note(
+    note_id: int, 
+    note: dict,
+    user: dict = Depends(get_current_user)
+):
     """
     Update a note
     """
@@ -40,10 +55,12 @@ async def update_note(note_id: int, note: dict):
     return {"message": "Note updated", "note_id": note_id}
 
 @router.delete("/{note_id}")
-async def delete_note(note_id: int):
+async def delete_note(
+    note_id: int,
+    user: dict = Depends(get_current_user)
+):
     """
     Delete a note
     """
     # TODO: Implement database delete
     return {"message": "Note deleted", "note_id": note_id}
-

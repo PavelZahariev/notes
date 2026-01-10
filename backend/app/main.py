@@ -5,7 +5,7 @@ Voice Agent Application Backend
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import voice, notes, reminders, agent
+from app.routers import voice, notes, reminders, agent, admin
 
 # Load environment variables from .env file
 
@@ -30,6 +30,7 @@ app.include_router(voice.router)
 app.include_router(notes.router)
 app.include_router(reminders.router)
 app.include_router(agent.router)
+app.include_router(admin.router)
 
 @app.get("/")
 async def root():

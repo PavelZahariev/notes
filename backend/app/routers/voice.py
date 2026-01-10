@@ -2,17 +2,21 @@
 Voice API Router
 Handles voice recording and transcription endpoints
 """
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from app.models.schemas import TranscriptionResponse, AgentResponse
 from app.services.voice_service import VoiceService
 from app.services.agent_service import AgentService
+from app.core.auth import get_current_user
 
 router = APIRouter(prefix="/api/voice", tags=["voice"])
 voice_service = VoiceService()
 agent_service = AgentService()
 
 @router.post("/transcribe", response_model=TranscriptionResponse)
-async def transcribe_audio(file: UploadFile = File(...)):
+async def transcribe_audio(
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user)
+):
     """
     Transcribe audio file to text
     """
@@ -22,7 +26,10 @@ async def transcribe_audio(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
 
 @router.post("/process", response_model=AgentResponse)
-async def process_voice_command(file: UploadFile = File(...)):
+async def process_voice_command(
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user)
+):
     """
     Process voice command: transcribe audio and classify intent
     

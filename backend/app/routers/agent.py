@@ -2,15 +2,19 @@
 Agent Router
 Endpoints for AI-powered intent classification and structured data extraction
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from ..models.schemas import AgentResponse, AgentClassifyRequest
 from ..services.agent_service import AgentService
+from ..core.auth import get_current_user
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])
 agent_service = AgentService()
 
 @router.post("/classify", response_model=AgentResponse)
-async def classify_input(request: AgentClassifyRequest):
+async def classify_input(
+    request: AgentClassifyRequest,
+    user: dict = Depends(get_current_user)
+):
     """
     Classify user input and extract structured data
     
@@ -47,7 +51,8 @@ async def classify_input(request: AgentClassifyRequest):
 async def classify_with_conversation_context(
     text: str,
     conversation_history: list[dict] = [],
-    context_vars: dict = {}
+    context_vars: dict = {},
+    user: dict = Depends(get_current_user)
 ):
     """
     Classify input with conversation history for context-aware processing

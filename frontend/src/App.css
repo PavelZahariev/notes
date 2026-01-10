@@ -24,6 +24,31 @@ body {
   padding: 2rem;
 }
 
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 800px;
+  margin: 0 auto 1rem;
+}
+
+.sign-out-btn {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.sign-out-btn:hover {
+  background: rgba(255, 69, 58, 0.1);
+  color: #ff453a;
+  border-color: rgba(255, 69, 58, 0.2);
+}
+
 .App-header h1 {
   font-size: 2.5rem;
   margin-bottom: 1rem;
@@ -44,4 +69,3 @@ body {
   margin-left: auto;
   margin-right: auto;
 }
-
