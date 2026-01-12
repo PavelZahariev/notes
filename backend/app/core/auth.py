@@ -37,20 +37,20 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         user = user_response.user
         
         # Sync user profile to the 'profiles' table
-        try:
-            # last_sign_in_at might be a datetime object, ensure it's a string for serialization
-            last_login = user.last_sign_in_at
-            if hasattr(last_login, 'isoformat'):
-                last_login = last_login.isoformat()
+        # try:
+        #     # last_sign_in_at might be a datetime object, ensure it's a string for serialization
+        #     last_login = user.last_sign_in_at
+        #     if hasattr(last_login, 'isoformat'):
+        #         last_login = last_login.isoformat()
                 
-            supabase.table('profiles').upsert({
-                'id': user.id,
-                'email': user.email,
-                'last_sign_in_at': last_login
-            }).execute()
-        except Exception as e:
-            print(f"⚠️ Failed to sync user profile: {str(e)}")
-            # We don't fail here, just log or handle as needed
+        #     supabase.table('profiles').upsert({
+        #         'id': user.id,
+        #         'email': user.email,
+        #         'last_sign_in_at': last_login
+        #     }).execute()
+        # except Exception as e:
+        #     print(f"⚠️ Failed to sync user profile: {str(e)}")
+        #     # We don't fail here, just log or handle as needed
             
         return user
         

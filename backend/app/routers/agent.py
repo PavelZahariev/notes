@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from ..models.schemas import AgentResponse, AgentClassifyRequest
 from ..services.agent_service import AgentService
 from ..core.auth import get_current_user
+import traceback
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])
 agent_service = AgentService()
@@ -45,6 +46,7 @@ async def classify_input(
         )
         return result
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Classification error: {str(e)}")
 
 @router.post("/classify-with-context", response_model=AgentResponse)
@@ -76,4 +78,5 @@ async def classify_with_conversation_context(
         )
         return result
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Classification error: {str(e)}")

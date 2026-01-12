@@ -5,6 +5,7 @@ Handles intent classification and structured data extraction using OpenAI GPT-4o
 import openai
 from datetime import datetime
 from typing import Optional
+import traceback
 from ..core.config import settings
 from ..models.schemas import AgentResponse
 
@@ -99,7 +100,7 @@ User input: "{text}"
             
         except Exception as e:
             # Fallback response in case of error
-            print(f"Error in agent classification: {e}")
+            traceback.print_exc()
             return AgentResponse(
                 intent='NOTE',
                 content=text,
@@ -155,7 +156,7 @@ User input: "{text}"
             return agent_response
             
         except Exception as e:
-            print(f"Error in agent classification with history: {e}")
+            traceback.print_exc()
             return AgentResponse(
                 intent='NOTE',
                 content=text,
@@ -164,3 +165,17 @@ User input: "{text}"
                 is_complete=False,
                 clarification_question="I encountered an error processing your request. Could you please rephrase?"
             )
+    
+    async def get_embedding(self, text: str) -> list[float]:
+        """
+        Generate embedding for text using OpenAI text-embedding-3-small
+        """
+        try:
+            response = await self.client.embeddings.create(
+                model="text-embedding-3-small",
+                input=text
+            )
+            return response.data[0].embedding
+        except Exception as e:
+            traceback.print_exc()
+            return []

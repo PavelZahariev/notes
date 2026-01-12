@@ -3,7 +3,7 @@ Database Service
 Handles interactions with Supabase database
 """
 import os
-from supabase import create_client, Client
+from supabase import create_async_client, AsyncClient
 from typing import Optional, List, Dict
 from datetime import datetime
 
@@ -12,20 +12,20 @@ class DatabaseService:
         self.supabase_url = os.getenv("SUPABASE_URL")
         self.supabase_key = os.getenv("SUPABASE_ANON_KEY")
         self.supabase_service_key = os.getenv("SUPABASE_SERVICE_KEY")
-        self.client: Optional[Client] = None
-        self.service_client: Optional[Client] = None
+        self.client: Optional[AsyncClient] = None
+        self.service_client: Optional[AsyncClient] = None
     
-    def get_client(self) -> Client:
+    async def get_client(self) -> AsyncClient:
         """
         Get or create Supabase client (anon key - subject to RLS)
         """
         if not self.client:
             if not self.supabase_url or not self.supabase_key:
                 raise ValueError("SUPABASE_URL and SUPABASE_ANON_KEY must be set")
-            self.client = create_client(self.supabase_url, self.supabase_key)
+            self.client = await create_async_client(self.supabase_url, self.supabase_key)
         return self.client
     
-    def get_service_client(self) -> Client:
+    async def get_service_client(self) -> AsyncClient:
         """
         Get or create Supabase service client (bypasses RLS)
         Required for global_context modifications
@@ -35,7 +35,7 @@ class DatabaseService:
                 raise ValueError("SUPABASE_URL must be set")
             if not self.supabase_service_key:
                 raise ValueError("SUPABASE_SERVICE_KEY must be set for global_context modifications")
-            self.service_client = create_client(self.supabase_url, self.supabase_service_key)
+            self.service_client = await create_async_client(self.supabase_url, self.supabase_service_key)
         return self.service_client
     
     # Entry methods
@@ -62,7 +62,8 @@ class DatabaseService:
         if embedding:
             entry_data["embedding"] = embedding
         
-        result = self.get_client().table("entries").insert(entry_data).execute()
+        client = await self.get_service_client()
+        result = await client.table("entries").insert(entry_data).execute()
         return result.data[0] if result.data else {}
     
     async def get_entries(
@@ -75,33 +76,37 @@ class DatabaseService:
         """
         Get entries for a user, optionally filtered by intent
         """
-        query = self.get_client().table("entries").select("*").eq("user_id", user_id)
+        client = await self.get_service_client()
+        query = client.table("entries").select("*").eq("user_id", user_id)
         
         if intent:
             query = query.eq("intent", intent)
         
-        result = query.order("created_at", desc=True).limit(limit).offset(offset).execute()
+        result = await query.order("created_at", desc=True).limit(limit).offset(offset).execute()
         return result.data if result.data else []
     
     async def get_entry(self, entry_id: str) -> Optional[dict]:
         """
         Get a specific entry by ID
         """
-        result = self.get_client().table("entries").select("*").eq("id", entry_id).execute()
+        client = await self.get_client()
+        result = await client.table("entries").select("*").eq("id", entry_id).execute()
         return result.data[0] if result.data else None
     
     async def update_entry(self, entry_id: str, updates: dict) -> dict:
         """
         Update an entry
         """
-        result = self.get_client().table("entries").update(updates).eq("id", entry_id).execute()
+        client = await self.get_service_client()
+        result = await client.table("entries").update(updates).eq("id", entry_id).execute()
         return result.data[0] if result.data else {}
     
     async def delete_entry(self, entry_id: str) -> bool:
         """
         Delete an entry (cascades to reminders)
         """
-        result = self.get_client().table("entries").delete().eq("id", entry_id).execute()
+        client = await self.get_service_client()
+        result = await client.table("entries").delete().eq("id", entry_id).execute()
         return True
     
     # Reminder methods
@@ -119,7 +124,8 @@ class DatabaseService:
             "due_date": due_date.isoformat(),
             "status": status
         }
-        result = self.get_client().table("reminders").insert(reminder_data).execute()
+        client = await self.get_service_client()
+        result = await client.table("reminders").insert(reminder_data).execute()
         return result.data[0] if result.data else {}
     
     async def get_reminders(
@@ -132,21 +138,23 @@ class DatabaseService:
         Get reminders for a user's entries
         """
         # Get reminders by joining with entries
-        result = self.get_client().table("reminders").select(
+        client = await self.get_client()
+        result = client.table("reminders").select(
             "*, entries(*)"
         ).eq("entries.user_id", user_id)
         
         if status:
             result = result.eq("status", status)
         
-        result = result.order("due_date", desc=False).limit(limit).execute()
+        result = await result.order("due_date", desc=False).limit(limit).execute()
         return result.data if result.data else []
     
     async def update_reminder(self, reminder_id: str, updates: dict) -> dict:
         """
         Update a reminder
         """
-        result = self.get_client().table("reminders").update(updates).eq("id", reminder_id).execute()
+        client = await self.get_service_client()
+        result = await client.table("reminders").update(updates).eq("id", reminder_id).execute()
         return result.data[0] if result.data else {}
     
     # Global context methods (user-specific)
@@ -154,7 +162,8 @@ class DatabaseService:
         """
         Get a global context value by key for a specific user
         """
-        result = self.get_client().table("global_context").select("value").eq("user_id", user_id).eq("key", key).execute()
+        client = await self.get_client()
+        result = await client.table("global_context").select("value").eq("user_id", user_id).eq("key", key).execute()
         return result.data[0]["value"] if result.data else None
     
     async def set_global_context(self, user_id: str, key: str, value: str, description: Optional[str] = None) -> dict:
@@ -169,7 +178,8 @@ class DatabaseService:
             "description": description
         }
         # Upsert with user_id and key as unique constraint
-        result = self.get_client().table("global_context").upsert(
+        client = await self.get_client()
+        result = await client.table("global_context").upsert(
             context_data,
             on_conflict="user_id,key"
         ).execute()
@@ -179,7 +189,8 @@ class DatabaseService:
         """
         Get all global context as a dictionary for a specific user
         """
-        result = self.get_client().table("global_context").select("key, value").eq("user_id", user_id).execute()
+        client = await self.get_client()
+        result = await client.table("global_context").select("key, value").eq("user_id", user_id).execute()
         return {item["key"]: item["value"] for item in result.data} if result.data else {}
     
     async def delete_global_context(self, user_id: str, key: str) -> bool:
@@ -187,7 +198,8 @@ class DatabaseService:
         Delete a global context value by key for a specific user
         RLS ensures users can only delete their own context
         """
-        result = self.get_client().table("global_context").delete().eq("user_id", user_id).eq("key", key).execute()
+        client = await self.get_client()
+        result = await client.table("global_context").delete().eq("user_id", user_id).eq("key", key).execute()
         return True
     
     # Vector similarity search
@@ -203,7 +215,8 @@ class DatabaseService:
         """
         # Use Supabase RPC for vector similarity search
         # Note: You may need to create a custom function in Supabase for this
-        result = self.get_client().rpc(
+        client = await self.get_client()
+        result = await client.rpc(
             "search_similar_entries",
             {
                 "user_id_param": user_id,
